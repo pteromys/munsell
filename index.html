@@ -3,7 +3,7 @@
 <head>
 	<title>Munsell Color Picker</title>
 	<script type="text/javascript" src="munsell-floats.js"></script>
-	<script type="text/javascript" src="interactive.js"></script>
+	<script type="text/javascript" src="glue5.js"></script>
 	<script type="text/javascript" src="color.js"></script>
 	<script type="text/javascript">
 		<!--
@@ -22,6 +22,15 @@
 			if (i < 4) { return (i + 1) * 0.02; }
 			else { return (i - 3) / 10; }
 		}
+		function munsell_name(i, j, k) {
+			var hue = ((i % 4 + 1) * 2.5).toFixed(1) +
+				['R', 'YR', 'Y', 'GY', 'G', 'BG', 'B', 'PB', 'P', 'RP'][
+				Math.floor(i/4)
+				];
+			var lightness = lightness_map(j) * 10;
+			var chroma = (k + 1) * 2;
+			return hue + ' ' + lightness + '/' + chroma;
+		}
 		function drawWedge(ctx, r1, r2, angle1, angle2) {
 			ctx.beginPath();
 			ctx.moveTo(r1 * Math.cos(angle2), r1 * Math.sin(angle2));
@@ -33,7 +42,7 @@
 		function draw_hc(ctx, radius, j) {
 			var angle = Math.PI / 20;
 			ctx.save();
-			ctx.translate(radius, radius);
+			ctx.translate(3*radius, radius);
 			ctx.scale(radius, -radius);
 			for (var i = 0; i < 40; i++) {
 				for (var k = 0; k < 25; k++) {
@@ -44,12 +53,18 @@
 					ctx.fill();
 				}
 			}
+			var i = window.current_color[0];
+			var k = window.current_color[2];
+			ctx.lineWidth = 0.0003 * (k+10);
+			ctx.strokeStyle = 'rgb(255,255,255)';
+			drawWedge(ctx, k/25, (k+1)/25, i*angle, (i+1)*angle);
+			ctx.stroke();
 			ctx.restore();
 		}
 		function draw_hl(ctx, radius, k) {
 			var angle = Math.PI / 20;
 			ctx.save();
-			ctx.translate(3*radius, radius);
+			ctx.translate(5*radius, radius);
 			ctx.scale(radius, -radius);
 			for (var i = 0; i < 40; i++) {
 				for (var j = 0; j < 14; j++) {
@@ -61,11 +76,18 @@
 					ctx.fill();
 				}
 			}
+			var i = window.current_color[0];
+			var j = window.current_color[1];
+			ctx.lineWidth = 0.01 * (0.1 + lightness_map(j));
+			ctx.strokeStyle = 'rgb(255,255,255)';
+			drawWedge(ctx, lightness_map(j-1), lightness_map(j),
+				i*angle, (i+1)*angle);
+			ctx.stroke();
 			ctx.restore();
 		}
 		function draw_lc(ctx, radius, i) {
 			ctx.save();
-			ctx.translate(4*radius, 2*radius);
+			ctx.translate(0, 2*radius);
 			ctx.scale(2*radius, -2*radius);
 			for (var j = 0; j < 14; j++) {
 				for (var k = 0; k < 25; k++) {
@@ -77,6 +99,12 @@
 					}
 				}
 			}
+			var j = window.current_color[1];
+			var k = window.current_color[2];
+			ctx.lineWidth = 0.005;
+			ctx.strokeStyle = 'rgb(255,255,255)';
+			ctx.strokeRect(k/25, lightness_map(j-1), 0.04,
+				lightness_map(j) - lightness_map(j-1));
 			ctx.restore();
 		}
 		function draw() {
@@ -84,19 +112,95 @@
 			m.width = m.width;
 			var c = m.getContext('2d')
 			var radius = m.height / 2;
-			draw_hc(c, radius, 8);
-			draw_hl(c, radius, 5);
-			draw_lc(c, radius, 30);
+			draw_lc(c, radius, window.current_color[0]);
+			draw_hc(c, radius, window.current_color[1]);
+			draw_hl(c, radius, window.current_color[2]);
+			show_color_in_elt(window.current_color,
+				document.getElementById('selected'),
+				document.getElementById('selected_box'));
+		}
+		function get_color_at(mouse_x, mouse_y) {
+			var m = document.getElementById('main');
+			var radius = m.height / 2;
+			var x = mouse_x - m.offsetLeft;
+			var y = mouse_y - m.offsetTop;
+			var i, j, k;
+			if (x < 2 * radius) {
+				x = x/(2 * radius);
+				y = 1 - y/(2 * radius);
+				i = window.current_color[0];
+				if (y < 0.1) {
+					j = Math.floor(y * 50);
+				} else {
+					j = Math.floor(y * 10 + 4);
+				}
+				k = Math.floor(x * 25);
+			} else if ( x < 4 * radius ) {
+				x = x/radius - 3;
+				y = 1 - y/radius;
+				i = Math.atan2(y, x) * 20 / Math.PI;
+				i = Math.floor((i + 40) % 40);
+				j = window.current_color[1];
+				k = Math.floor(Math.sqrt(x*x + y*y) * 25);
+			} else {
+				x = x/radius - 5;
+				y = 1 - y/radius;
+				i = Math.atan2(y, x) * 20 / Math.PI;
+				i = Math.floor((i + 40) % 40);
+				j = Math.sqrt(x*x + y*y);
+				if (j < 0.1) {
+					j = Math.floor(j * 50);
+				} else {
+					j = Math.floor(j * 10 + 4);
+				}
+				k = window.current_color[2];
+			}
+			if (i < 0 || j < 0 || k < 0) { return; }
+			if (i >= 40 || j >= 14 || k >= 25) { return; }
+			return [i, j, k];
+		}
+		function show_color_in_elt(color, elt, showbox) {
+			if (!color) { return; }
+			var ans = munsell_name(color[0], color[1], color[2]);
+			var rgb = colorname(Munsell[color[0]][color[1]][color[2]]);
+			ans += ' ' + rgb;
+			elt.innerHTML = ans;
+			showbox.style.background = rgb;
 		}
 		window.onload = function () {
-			document.getElementById('lightness').onchange = function (e) {
-				var l = parseInt(this.value) || 0;
-				return draw(l);
-			};
-			var width = document.body.offsetWidth;
-			document.getElementById('main').width = width;
-			document.getElementById('main').height = Math.floor(width / 3);
-			draw(8);
+			var width = document.body.clientWidth;
+			var m = document.getElementById('main');
+			m.width = width;
+			m.height = Math.floor(width / 3);
+			m.onmousemove = function (e) {
+				if (!e) { e = window.event; }
+				var xy = mouse_coords(e);
+				var color = get_color_at(xy[0], xy[1]);
+				if (window.mouse_is_down) {
+					if (color && (window.current_color != color)) {
+						window.current_color = color;
+						draw();
+					}
+				}
+				show_color_in_elt(color,
+					document.getElementById('mouseover'),
+					document.getElementById('mouseover_box'));
+			}
+			window.onresize = function () {
+				var width = document.body.clientWidth;
+				var m = document.getElementById('main');
+				m.width = width;
+				m.height = Math.floor(width / 3);
+				draw();
+			}
+			window.onmousedown = function (e) {
+				window.mouse_is_down = true;
+				document.getElementById('main').onmousemove(e);
+			}
+			window.onmouseup = function () { window.mouse_is_down = false; }
+			m.onmouseout = function () { window.mouse_is_down = false; }
+			window.current_color = [30, 8, 4]; // h, l, c
+			draw();
 		};
 		//-->
 	</script>
@@ -110,14 +214,34 @@
 			display: block;
 			margin-left: auto;
 			margin-right: auto;
+			margin-bottom: 0.5em;
 			background: #777;
 			border: 1px solid #333;
+		}
+		span#mouseover_box, span#selected_box {
+			display: inline-block;
+			overflow: hidden;
+			width: 1em;
+			height: 1em;
+			border: 1px dotted #fff;
+		}
+		div#selected_div {
+			float: left;
+		}
+		div#mouseover_div {
+			float: right;
 		}
 	</style>
 </head>
 <body>
 	<canvas id="main" width="300" height="300"></canvas>
-	<label for="lightness">Lightness (0-13):</label>
-	<input id="lightness" type="range" min="0" max="13" step="1" value="8" />
+	<div id="selected_div">Selected:
+		<span id="selected">None</span>
+		<span id="selected_box">&nbsp;</span>
+	</div>
+	<div id="mouseover_div">Mouse over:
+		<span id="mouseover">None</span>
+		<span id="mouseover_box">&nbsp;</span>
+	</div>
 </body>
 </html>
