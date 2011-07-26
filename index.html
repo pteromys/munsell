@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>Munsell Color Picker</title>
+	<script type="text/javascript" src="munsell-floats.js"></script>
+	<script type="text/javascript" src="interactive.js"></script>
+	<script type="text/javascript" src="color.js"></script>
+	<script type="text/javascript">
+		<!--
+		function colorname(triple) {
+			var ans = [0, 0, 0];
+			for (var i in ans) { ans[i] = Math.round(triple[i] * 255); }
+			return Color.cssrgb(ans);
+		}
+		function color_valid(triple) {
+			for (var i in triple) {
+				if (triple[i] < 0 || triple[i] > 1) { return false; }
+			}
+			return true;
+		}
+		function lightness_map(i) {
+			if (i < 3) { return (i + 1) * 0.02; }
+			else { return (i - 3) / 10; }
+		}
+		function drawWedge(ctx, r1, r2, angle1, angle2) {
+			ctx.beginPath();
+			ctx.moveTo(r1 * Math.cos(angle2), r1 * Math.sin(angle2));
+			ctx.arc(0, 0, r1, angle2, angle1, true);
+			ctx.lineTo(r2 * Math.cos(angle1), r2 * Math.sin(angle1));
+			ctx.arc(0, 0, r2, angle1, angle2, false);
+			ctx.closePath();
+		}
+		function draw_hc(ctx, radius, j) {
+			var angle = Math.PI / 20;
+			ctx.save();
+			ctx.translate(radius, radius);
+			ctx.scale(radius, -radius);
+			for (var i = 0; i < 40; i++) {
+				for (var k = 0; k < 25; k++) {
+					var color = Munsell[i][j][k];
+					if (!color_valid(color)) { continue; }
+					ctx.fillStyle = colorname(color);
+					drawWedge(ctx, k/25, (k+1)/25, i*angle, (i+1)*angle);
+					ctx.fill();
+				}
+			}
+			ctx.restore();
+		}
+		function draw_hl(ctx, radius, k) {
+			var angle = Math.PI / 20;
+			ctx.save();
+			ctx.translate(3*radius, radius);
+			ctx.scale(radius, -radius);
+			for (var i = 0; i < 40; i++) {
+				for (var j = 0; j < 14; j++) {
+					var color = Munsell[i][j][k];
+					if (!color_valid(color)) { continue; }
+					ctx.fillStyle = colorname(color);
+					drawWedge(ctx, lightness_map(j-1), lightness_map(j),
+						i*angle, (i+1)*angle);
+					ctx.fill();
+				}
+			}
+			ctx.restore();
+		}
+		function draw_lc_double(ctx, radius, i) {
+			var i2 = (i + 20) % 40;
+			ctx.save();
+			ctx.translate(5*radius, radius);
+			ctx.scale(radius, -radius);
+			for (var j = 0; j < 14; j++) {
+				for (var k = 0; k < 25; k++) {
+					var color = Munsell[i][j][k];
+					if (color_valid(color)) {
+						ctx.fillStyle = colorname(color);
+						ctx.fillRect(k/25, 2 * lightness_map(j-1) - 1, 0.04,
+							2 * (lightness_map(j) - lightness_map(j-1)));
+					}
+					color = Munsell[i2][j][k];
+					if (color_valid(color)) {
+						ctx.fillStyle = colorname(color);
+						ctx.fillRect(-k/25, 2 * lightness_map(j-1) - 1, -0.04,
+							2 * (lightness_map(j) - lightness_map(j-1)));
+					}
+				}
+			}
+			ctx.restore();
+		}
+		function draw_lc(ctx, radius, i) {
+			ctx.save();
+			ctx.translate(4*radius, 2*radius);
+			ctx.scale(2*radius, -2*radius);
+			for (var j = 0; j < 14; j++) {
+				for (var k = 0; k < 25; k++) {
+					var color = Munsell[i][j][k];
+					if (color_valid(color)) {
+						ctx.fillStyle = colorname(color);
+						ctx.fillRect(k/25, lightness_map(j-1), 0.04,
+							lightness_map(j) - lightness_map(j-1));
+					}
+				}
+			}
+			ctx.restore();
+		}
+		function draw() {
+			var m = document.getElementById('main');
+			m.width = m.width;
+			var c = m.getContext('2d')
+			var radius = m.height / 2;
+			draw_hc(c, radius, 8);
+			draw_hl(c, radius, 5);
+			draw_lc(c, radius, 30);
+		}
+		window.onload = function () {
+			document.getElementById('lightness').onchange = function (e) {
+				var l = parseInt(this.value) || 0;
+				return draw(l);
+			};
+			var width = document.body.offsetWidth;
+			document.getElementById('main').width = width;
+			document.getElementById('main').height = Math.floor(width / 3);
+			draw(8);
+		};
+		//-->
+	</script>
+	<style type="text/css">
+		body{ 
+			background: #000;
+			color: #fff;
+			text-align: center;
+		}
+		canvas {
+			display: block;
+			margin-left: auto;
+			margin-right: auto;
+			background: #777;
+			border: 1px solid #333;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="main" width="300" height="300"></canvas>
+	<label for="lightness">Lightness (0-13):</label>
+	<input id="lightness" type="range" min="0" max="13" step="1" value="8" />
+</body>
+</html>
