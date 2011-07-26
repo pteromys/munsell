@@ -63,29 +63,6 @@
 			}
 			ctx.restore();
 		}
-		function draw_lc_double(ctx, radius, i) {
-			var i2 = (i + 20) % 40;
-			ctx.save();
-			ctx.translate(5*radius, radius);
-			ctx.scale(radius, -radius);
-			for (var j = 0; j < 14; j++) {
-				for (var k = 0; k < 25; k++) {
-					var color = Munsell[i][j][k];
-					if (color_valid(color)) {
-						ctx.fillStyle = colorname(color);
-						ctx.fillRect(k/25, 2 * lightness_map(j-1) - 1, 0.04,
-							2 * (lightness_map(j) - lightness_map(j-1)));
-					}
-					color = Munsell[i2][j][k];
-					if (color_valid(color)) {
-						ctx.fillStyle = colorname(color);
-						ctx.fillRect(-k/25, 2 * lightness_map(j-1) - 1, -0.04,
-							2 * (lightness_map(j) - lightness_map(j-1)));
-					}
-				}
-			}
-			ctx.restore();
-		}
 		function draw_lc(ctx, radius, i) {
 			ctx.save();
 			ctx.translate(4*radius, 2*radius);
