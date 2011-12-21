@@ -11,16 +11,18 @@
 		function colorname(triple) {
 			var ans = [0, 0, 0];
 			for (var i in ans) {
-				if (isNaN(triple[i])) {
-					return Color.cssrgb([0,0,0]);
-				}
 				ans[i] = Math.round(triple[i] * 255);
 			}
 			return Color.cssrgb(ans);
 		}
+		function color_charted(triple) {
+			for (var i in triple) {
+				if (isNaN(triple[i])) { return false; }
+			}
+			return true;
+		}
 		function color_valid(triple) {
 			for (var i in triple) {
-				if (isNaN(triple[i])) { return true; }
 				if (triple[i] < 0 || triple[i] > 1) { return false; }
 			}
 			return true;
@@ -119,6 +121,7 @@
 			for (var i = 0; i < 40; i++) {
 				for (var k = -1; k < 25; k++) {
 					var color = Munsell.interpolate(i, j, k);
+					if (!color_charted(color)) { color = [0,0,0]; }
 					if (!color_valid(color)) { continue; }
 					ctx.fillStyle = colorname(color);
 					drawWedge(ctx, chroma_map(k), chroma_map(k+1), i*angle, (i+1)*angle);
@@ -135,6 +138,7 @@
 			for (var i = 0; i < 40; i++) {
 				for (var j = 0; j < 14; j++) {
 					var color = Munsell.interpolate(i, j, k);
+					if (!color_charted(color)) { color = [0,0,0]; }
 					if (!color_valid(color)) { continue; }
 					ctx.fillStyle = colorname(color);
 					drawWedge(ctx, lightness_map(j-1), lightness_map(j),
@@ -151,12 +155,12 @@
 			for (var j = 0; j < 14; j++) {
 				for (var k = -1; k < 25; k++) {
 					var color = Munsell.interpolate(i, j, k);
-					if (color_valid(color)) {
-						ctx.fillStyle = colorname(color);
-						ctx.fillRect(chroma_map(k), lightness_map(j-1),
-							chroma_map(k) - chroma_map(k-1),
-							lightness_map(j) - lightness_map(j-1));
-					}
+					if (!color_charted(color)) { color = [0,0,0]; }
+					if (!color_valid(color)) { continue; }
+					ctx.fillStyle = colorname(color);
+					ctx.fillRect(chroma_map(k), lightness_map(j-1),
+						chroma_map(k) - chroma_map(k-1),
+						lightness_map(j) - lightness_map(j-1));
 				}
 			}
 			ctx.restore();
@@ -248,10 +252,19 @@
 		function show_color_in_elt(color, elt, showbox) {
 			if (!color) { return; }
 			var ans = munsell_name(color[0], color[1], color[2]);
-			var rgb = colorname(Munsell.interpolate(color[0], color[1], color[2]));
-			ans += ' ' + rgb;
+			var rgb = Munsell.interpolate(color[0], color[1], color[2]);
+			var rgbname = colorname(rgb);
+			if (color_charted(rgb)) {
+				if (color_valid(rgb)) {
+					ans += ' ' + rgbname;
+				} else {
+					ans += ' <span class="warning">' + rgbname + '</span>';
+				}
+			} else {
+				ans += ' <span class="error">(Uncharted)</span>';
+			}
 			elt.innerHTML = ans;
-			showbox.style.background = rgb;
+			showbox.style.background = rgbname;
 		}
 		window.onload = function () {
 			// Set up the canvas
@@ -333,6 +346,12 @@
 		}
 		div#discrete_check_div {
 			float: left;
+		}
+		span.warning {
+			color: #fc0;
+		}
+		span.error {
+			color: #f66;
 		}
 	</style>
 </head>
