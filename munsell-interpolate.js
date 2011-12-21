@@ -6,13 +6,12 @@ Munsell.interpolate = function (i, j, k) {
 		else { return factor * maybe_number; }
 	}
 	// Insert gray
-	k = k + 1;
 	var i0 = Math.floor(i);
 	var j0 = Math.floor(j);
 	var k0 = Math.floor(k);
 	var i1 = (i0 + 1) % 40;
-	var j1 = Math.min(j0 + 1, 13);
-	var k1 = Math.min(k0 + 1, 24);
+	var j1 = j0 + 1;
+	var k1 = k0 + 1;
 	var a1 = i - i0;
 	var b1 = j - j0;
 	var c1 = k - k0;

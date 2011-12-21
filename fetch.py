@@ -74,19 +74,23 @@ def process():
     for entry in entries:
         entry[-3:] = rgb_delinearize(*xyy_to_rgb_linear(*entry[-3:]))
     # Fill the table that our javascript will read.
-    c = [[[[None,None,None] for k in range(26)] for j in range(14)] for i in range(40)]
+    c = [[[[None,None,None] for k in range(27)] for j in range(16)] for i in range(40)]
     for entry in entries:
         c[round(entry[0] * 0.4 - 1)][
-            round((entry[1] > 1) and (entry[1] + 3) or (entry[1] * 5 - 1))
+            round((entry[1] > 1) and (entry[1] + 4) or (entry[1] * 5))
             ][round(entry[2]/2)] = entry[-3:]
     # Insert grays (chroma = 0) by averaging diametric opposites.
     # The source of our data doesn't include grays, so we interpolate.
-    for j in range(14):
+    for j in range(15):
         gray = average_triplets(
             [average_triplets([c[i][j][1], c[i+20][j][1]]) for i in range(20)],
             ignore_nones = True)
         for i in range(40):
             c[i][j][0] = gray
+    # Insert black
+    for i in range(40):
+        for k in range(27):
+            c[i][0][k] = [0, 0, 0]
     return c
 
 def prettify(c):
