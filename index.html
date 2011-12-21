@@ -76,7 +76,7 @@
 			ctx.scale(radius, -radius);
 			ctx.lineWidth = 0.0003 * (k+10);
 			ctx.strokeStyle = 'rgb(255,255,255)';
-			if (is_discrete()) {
+			if (window.options.discrete) {
 				drawWedge(ctx, chroma_map(k), chroma_map(k+1), i*angle, (i+1)*angle);
 			} else {
 				drawPolarCrossHairs(ctx, chroma_map(k), i*angle, 0.01, 0.05);
@@ -89,7 +89,7 @@
 			ctx.scale(radius, -radius);
 			ctx.lineWidth = 0.01 * (0.1 + lightness_map(j));
 			ctx.strokeStyle = 'rgb(255,255,255)';
-			if (is_discrete()) {
+			if (window.options.discrete) {
 				drawWedge(ctx, lightness_map(j-1), lightness_map(j),
 					i*angle, (i+1)*angle);
 			} else {
@@ -103,7 +103,7 @@
 			ctx.scale(2*radius, -2*radius);
 			ctx.lineWidth = 0.005;
 			ctx.strokeStyle = 'rgb(255,255,255)';
-			if (is_discrete()) {
+			if (window.options.discrete) {
 				ctx.strokeRect(chroma_map(k), lightness_map(j-1),
 					chroma_map(k) - chroma_map(k-1),
 					lightness_map(j) - lightness_map(j-1));
@@ -122,7 +122,7 @@
 				for (var k = -1; k < 25; k++) {
 					var color = Munsell.interpolate(i, j, k);
 					if (!color_charted(color)) { color = [0,0,0]; }
-					if (!color_valid(color)) { continue; }
+					if (!(color_valid(color) || window.options.oog)) { continue; }
 					ctx.fillStyle = colorname(color);
 					drawWedge(ctx, chroma_map(k), chroma_map(k+1), i*angle, (i+1)*angle);
 					ctx.fill();
@@ -139,7 +139,7 @@
 				for (var j = 0; j < 14; j++) {
 					var color = Munsell.interpolate(i, j, k);
 					if (!color_charted(color)) { color = [0,0,0]; }
-					if (!color_valid(color)) { continue; }
+					if (!(color_valid(color) || window.options.oog)) { continue; }
 					ctx.fillStyle = colorname(color);
 					drawWedge(ctx, lightness_map(j-1), lightness_map(j),
 						i*angle, (i+1)*angle);
@@ -156,7 +156,7 @@
 				for (var k = -1; k < 25; k++) {
 					var color = Munsell.interpolate(i, j, k);
 					if (!color_charted(color)) { color = [0,0,0]; }
-					if (!color_valid(color)) { continue; }
+					if (!(color_valid(color) || window.options.oog)) { continue; }
 					ctx.fillStyle = colorname(color);
 					ctx.fillRect(chroma_map(k), lightness_map(j-1),
 						chroma_map(k) - chroma_map(k-1),
@@ -193,10 +193,12 @@
 					d.data[i] = d.data[i + 1] = d.data[i + 2] = d.data[i + 3] = 0;
 					if (color) {
 						color = Munsell.interpolate(color[0], color[1], color[2]);
-						if (color_valid(color)) {
-							d.data[i + 0] = Math.round(color[0] * 255);
-							d.data[i + 1] = Math.round(color[1] * 255);
-							d.data[i + 2] = Math.round(color[2] * 255);
+						if (color_valid(color) || window.options.oog) {
+							for (var j = 0; j < 3; j+= 1) {
+								d.data[i + j] = Math.max(0,
+									Math.min(Math.round(color[j] * 255),
+									255));
+							}
 							d.data[i + 3] = 255;
 						}
 					}
@@ -246,9 +248,6 @@
 			if (i >= 40 || j >= 14 || k >= 25) { return; }
 			return [i, j, k];
 		}
-		function is_discrete() {
-			return document.getElementById('discrete_check').checked;
-		}
 		function show_color_in_elt(color, elt, showbox) {
 			if (!color) { return; }
 			var ans = munsell_name(color[0], color[1], color[2]);
@@ -266,12 +265,18 @@
 			elt.innerHTML = ans;
 			showbox.style.background = rgbname;
 		}
+		window.options = new Object();
+		window.options.refresh = function () {
+			this.discrete = document.getElementById('discrete_check').checked;
+			this.oog = document.getElementById('oog_check').checked;
+		};
 		window.onload = function () {
-			// Set up the canvas
+			// Set up
 			var width = document.body.clientWidth;
 			var m = document.getElementById('main');
 			m.width = width;
 			m.height = Math.floor(width / 3);
+			window.options.refresh();
 			// Pick initial color and draw once
 			window.current_color = [30, 8, 4]; // h, l, c
 			draw();
@@ -280,7 +285,8 @@
 				if (!e) { e = window.event; }
 				var xy = mouse_coords(e);
 				var color = get_color(xy[0] - m.offsetLeft, xy[1] - m.offsetTop);
-				if (is_discrete()) {
+				window.options.refresh();
+				if (window.options.discrete) {
 					for (var i in color) {
 						color[i] = Math.floor(color[i]);
 					}
@@ -294,29 +300,30 @@
 				show_color_in_elt(color,
 					document.getElementById('mouseover'),
 					document.getElementById('mouseover_box'));
-			}
+			};
 			window.onresize = function () {
 				var width = document.body.clientWidth;
 				var m = document.getElementById('main');
 				m.width = width;
 				m.height = Math.floor(width / 3);
 				draw();
-			}
+			};
 			window.onmousedown = function (e) {
 				window.mouse_is_down = true;
 				document.getElementById('main').onmousemove(e);
-			}
-			window.onmouseup = function () { window.mouse_is_down = false; }
-			m.onmouseout = function () { window.mouse_is_down = false; }
+			};
+			window.onmouseup = function () { window.mouse_is_down = false; };
+			m.onmouseout = function () { window.mouse_is_down = false; };
 			document.getElementById('continuous_button').onclick = function () {
 				var button = this;
 				function draw_continuous_finish() {
+					window.options.refresh();
 					draw_continuous();
 					button.disabled = false;
 				}
 				button.disabled = true;
 				setTimeout(draw_continuous_finish, 25);
-			}
+			};
 		};
 		//-->
 	</script>
@@ -341,11 +348,19 @@
 			height: 1em;
 			border: 1px dotted #fff;
 		}
-		div#selected_div {
+		ul#indicators_list {
+			float: right;
 			text-align: right;
+			list-style-type: none;
+			margin: 0em 0em 0em 1em;
+			padding-left: 0em;
 		}
-		div#discrete_check_div {
+		ul#options_list {
 			float: left;
+			text-align: left;
+			list-style-type: none;
+			margin: 0em;
+			padding-left: 0em;
 		}
 		span.warning {
 			color: #fc0;
@@ -357,24 +372,28 @@
 </head>
 <body>
 	<canvas id="main" width="300" height="300"></canvas>
-	<div id="discrete_check_div">
-		<div>
+	<ul id="options_list">
+		<li title="Snap selection to the color of the nearest tile.">
 			<input type="checkbox" id="discrete_check" checked />
 			<label for="discrete_check">Select discrete</label>
-		</div>
-		<div>
+		</li>
+		<li title="Plot approximations to colors that are out of the sRGB gamut.">
+			<input type="checkbox" id="oog_check" />
+			<label for="oog_check">Plot out-of-range colors</label>
+		</li>
+		<li title="Plot the color charts with interpolation between tiles.">
 			<input type="button" id="continuous_button" value="Render interpolated" />
-		</div>
-	</div>
-	<div id="selected_div">
-		<div>Selected:
+		</li>
+	</ul>
+	<ul id="indicators_list">
+		<li>Selected:
 			<span id="selected">None</span>
 			<span id="selected_box">&nbsp;</span>
-		</div>
-		<div>Mouse over:
+		</li>
+		<li>Mouse over:
 			<span id="mouseover">None</span>
 			<span id="mouseover_box">&nbsp;</span>
-		</div>
+		</li>
 	</div>
 </body>
 </html>
