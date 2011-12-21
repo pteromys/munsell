@@ -59,15 +59,34 @@ def rgb_delinearize(*rgb):
 def hls_to_hlc(h, l, s):
     return h, l, s * (1 - abs(2 * l - 1))
 
+def average_triplets(triplets, ignore_nones = False):
+    ans = [None, None, None]
+    for i in range(3):
+        filtered_values = list(filter(lambda x: x is not None, [t[i] for t in triplets]))
+        num_values = len(filtered_values)
+        if ((num_values != len(triplets)) and not ignore_nones) or num_values < 1:
+            continue
+        ans[i] = sum(filtered_values) / len(filtered_values)
+    return ans
+
 def process():
     entries = parse(load())
     for entry in entries:
         entry[-3:] = rgb_delinearize(*xyy_to_rgb_linear(*entry[-3:]))
-    c = [[[[0,0,0] for i in range(25)] for j in range(14)] for k in range(40)]
+    # Fill the table that our javascript will read.
+    c = [[[[None,None,None] for k in range(26)] for j in range(14)] for i in range(40)]
     for entry in entries:
         c[round(entry[0] * 0.4 - 1)][
             round((entry[1] > 1) and (entry[1] + 3) or (entry[1] * 5 - 1))
-            ][round(entry[2]/2 - 1)] = entry[-3:]
+            ][round(entry[2]/2)] = entry[-3:]
+    # Insert grays (chroma = 0) by averaging diametric opposites.
+    # The source of our data doesn't include grays, so we interpolate.
+    for j in range(14):
+        gray = average_triplets(
+            [average_triplets([c[i][j][1], c[i+20][j][1]]) for i in range(20)],
+            ignore_nones = True)
+        for i in range(40):
+            c[i][j][0] = gray
     return c
 
 def prettify(c):
@@ -75,7 +94,7 @@ def prettify(c):
         '[\n%s\n]' % ',\n'.join([
             ' [%s]' % ','.join([
                 '[%s]' % ','.join([
-                    ((w == 0) and '0' or ('%.5f' % w)) for w in z])
+                    ((w is None) and 'NaN' or ('%.5f' % w)) for w in z])
                 for z in y])
             for y in x])
         for x in c])
