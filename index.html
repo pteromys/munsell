@@ -65,7 +65,7 @@
 		function drawPolarCrossHairs(ctx, r, angle, r1, r2) {
 			return drawCrossHairs(ctx, r * Math.cos(angle), r * Math.sin(angle), r1, r2);
 		}
-		function draw_selections(ctx, radius) {
+		function draw_selections(ctx, radius, discrete) {
 			var angle = Math.PI / 20;
 			var i = window.current_color[0];
 			var j = window.current_color[1];
@@ -76,7 +76,7 @@
 			ctx.scale(radius, -radius);
 			ctx.lineWidth = 0.0003 * (k+10);
 			ctx.strokeStyle = 'rgb(255,255,255)';
-			if (window.options.discrete) {
+			if (discrete) {
 				drawWedge(ctx, chroma_map(k), chroma_map(k+1), i*angle, (i+1)*angle);
 			} else {
 				drawPolarCrossHairs(ctx, chroma_map(k), i*angle, 0.01, 0.05);
@@ -89,7 +89,7 @@
 			ctx.scale(radius, -radius);
 			ctx.lineWidth = 0.01 * (0.1 + lightness_map(j));
 			ctx.strokeStyle = 'rgb(255,255,255)';
-			if (window.options.discrete) {
+			if (discrete) {
 				drawWedge(ctx, lightness_map(j-1), lightness_map(j),
 					i*angle, (i+1)*angle);
 			} else {
@@ -103,7 +103,7 @@
 			ctx.scale(2*radius, -2*radius);
 			ctx.lineWidth = 0.005;
 			ctx.strokeStyle = 'rgb(255,255,255)';
-			if (window.options.discrete) {
+			if (discrete) {
 				ctx.strokeRect(chroma_map(k), lightness_map(j-1),
 					chroma_map(k+1) - chroma_map(k),
 					lightness_map(j) - lightness_map(j-1));
@@ -173,7 +173,7 @@
 			draw_lc(c, radius, window.current_color[0]);
 			draw_hc(c, radius, window.current_color[1]);
 			draw_hl(c, radius, window.current_color[2]);
-			draw_selections(c, radius);
+			draw_selections(c, radius, window.options.discrete);
 			show_color_in_elt(window.current_color,
 				document.getElementById('selected'),
 				document.getElementById('selected_box'));
@@ -205,7 +205,7 @@
 				}
 			}
 			d = c.putImageData(d, 0, 0);
-			draw_selections(c, radius);
+			draw_selections(c, radius, false);
 			show_color_in_elt(window.current_color,
 				document.getElementById('selected'),
 				document.getElementById('selected_box'));
