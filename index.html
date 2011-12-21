@@ -285,6 +285,7 @@
 			window.current_color = [30, 8, 4]; // h, l, c
 			draw();
 			// Having drawn once, set up event handlers
+			// Select color at the mouse position
 			m.onmousemove = function (e) {
 				if (!e) { e = window.event; }
 				var xy = mouse_coords(e);
@@ -315,18 +316,23 @@
 						document.getElementById('mouseover_box'));
 				}
 			};
+			// Redraw the canvas upon resize.
 			window.onresize = function () {
 				var width = document.body.clientWidth;
 				m.width = width;
 				m.height = Math.floor(width / 3);
 				draw();
 			};
+			// Handle clicks on the canvas
 			m.onmousedown = function (e) {
 				window.mouse_is_down = true;
 				m.onmousemove(e);
+				return false;
 			};
+			m.onselectstart = function () { return false; };
 			window.onmouseup = function () { window.mouse_is_down = false; };
 			m.onmouseout = function () { window.mouse_is_down = false; };
+			// Handle the continuous-render button
 			document.getElementById('continuous_button').onclick = function () {
 				var button = this;
 				function draw_continuous_finish() {
