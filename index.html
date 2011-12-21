@@ -219,7 +219,7 @@
 				y = 1 - y/(2 * radius);
 				i = window.current_color[0];
 				if (y < 0.1) {
-					j = y * 50 - 0;
+					j = y * 50;
 				} else {
 					j = y * 10 + 4;
 				}
@@ -238,7 +238,7 @@
 				i = (i + 40) % 40;
 				j = Math.sqrt(x*x + y*y);
 				if (j < 0.1) {
-					j = j * 50 - 0;
+					j = j * 50;
 				} else {
 					j = j * 10 + 4;
 				}
@@ -292,7 +292,7 @@
 				if (color) {
 					window.options.refresh();
 					if (window.options.discrete) {
-						// Why is the lightness index discretized with 1 added?
+						// Why is the lightness index discretized with ceiling?
 						// It's because the tile view starts with lightness > 0.
 						// Contrast this to chroma, which starts at 0 in tile mode.
 						// This is also why when we draw wedges, we use j and j-1
@@ -300,7 +300,8 @@
 						// Fortunately, the correct offsets and everything can
 						// be found more or less by trial and error.
 						color[0] = Math.floor(color[0]);
-						color[1] = Math.floor(color[1] + 1);
+						color[1] = Math.ceil(color[1]);
+						if (color[1] == 0) { color[1] = 1; }
 						color[2] = Math.floor(color[2]);
 					}
 					if (window.mouse_is_down) {
