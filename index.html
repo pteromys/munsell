@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-	<title>Munsell Color Picker</title>
+	<title>Munsell Color Palette</title>
 	<script type="text/javascript" src="munsell-floats.js"></script>
 	<script type="text/javascript" src="munsell-interpolate.js"></script>
 	<script type="text/javascript" src="glue5.js"></script>
@@ -369,8 +369,9 @@
 	<style type="text/css">
 		body{ 
 			background: #000;
-			color: #fff;
-			text-align: center;
+			color: #ccc;
+			text-align: left;
+			font-family: sans-serif;
 		}
 		canvas {
 			display: block;
@@ -401,11 +402,51 @@
 			margin: 0em;
 			padding-left: 0em;
 		}
+		li {
+			margin: 0.6em 0em;
+		}
+		ul#indicators_list li, ul#options_list li {
+			margin: 0.2em 0em;
+		}
 		span.warning {
 			color: #fc0;
 		}
 		span.error {
 			color: #f66;
+		}
+		h1 {
+			padding: 0.5em;
+			clear: both;
+			text-align: center;
+		}
+		a:link    { color: #6cf; }
+		a:visited { color: #c6f; }
+		a:hover   { color: #cff; }
+		a:active  { color: #ffc; }
+		input, select, option {
+			font-family: sans-serif;
+			color: #fff;
+			background: #333;
+			border: 1px solid #999;
+		}
+		input[type="submit"], input[type="button"] {
+			background: #666;
+			border: 2px outset #999;
+		}
+		input[disabled] {
+			color: #999;
+			border: 2px solid #666;
+		}
+		input:active {
+			background: #999;
+			border: 2px inset #999;
+		}
+		input[type="number"] {
+			width: 7ex;
+		}
+		div#mainbox {
+			max-width: 50em;
+			margin: 1em auto;
 		}
 	</style>
 </head>
@@ -449,11 +490,33 @@
 				<option value="80">P</option>
 				<option value="90">RP</option>
 			</select>
-			<input type="number" id="goto_lightness" title="Lightness"
+			<input type="number" id="goto_lightness" title="Value"
 				min="0" max="10" step="0.1" value="4.0" />/<input
 				type="number" id="goto_chroma" title="Chroma"
 				min="0" max="50" step="0.5" value="8.0" />
 		</form></li>
+	</ul>
+
+	<div id="mainbox">
+	<h1>Munsell Color Palette</h1>
+	<p>The above grids can be used to choose colors from the
+	<a href="http://en.wikipedia.org/wiki/Munsell_color_system">Munsell color system</a> and display them in <a href="http://en.wikipedia.org/wiki/SRGB">sRGB</a> coordinates. The grids are (in order) value/chroma, chroma/hue, and value/hue.</p>
+	<h2>Limitations</h2>
+	<ul>
+		<li>The xyY-to-sRGB formula (in the <a href="fetch.py">python script</a> used to process the renotation data) is from Wikipedia. Unless you're willing to verify the formula independently, put no more trust in the correctness of this page than you'd put in the correctness of Wikipedia.</li>
+		<li>The data set used to plot these colors contains no grayscales. Black is assumed to be (0,0,0) in sRGB coordinates, and all other grays are interpolated by averaging hue-opposites with the smallest chroma coordinate.</li>
+		<li>Interpolation is piecewise linear as a map from Munsell (hue, value, chroma) coordinates to (r, g, b) coordinates. (One could argue that it would be more appropriate to interpolate to coordinates in, say, <a href="http://en.wikipedia.org/wiki/CIELUV">CIELUV</a> before converting formulaically to sRGB.)</li>
+		<li>There is no support for zooming. As a workaround until I come up with a way to fix this, I suggest using the input boxes on the right side of the page for fine-grained navigation.</li>
+		<li>Tested only in Firefox 8.0.1 and Chromium 15.0.874.121.</li>
+	</ul>
+	<h2>Sources</h2>
+	<ul>
+		<li><a href="http://en.wikipedia.org/wiki/SRGB#Specification_of_the_transformation">The xyY-to-sRGB formula</a> is from Wikipedia.</li>
+		<li>The data set used to plot these colors is the <a href="http://www.cis.rit.edu/research/mcsl2/online/munsell.php">Munsell Renotation Data</a>, from the Munsell Color Science Laboratory at the Rochester Institute of Technology.</li>
+		<li>Mouse coordinates are computed using code cribbed <a href="http://www.quirksmode.org/js/events_properties.html">from quirksmode.js</a>. (<a href="http://www.quirksmode.org/about/copyright.html">License</a>)</li>
+	</ul>
+	<h2>License</h2>
+	<p>You may freely use the results of computations provided by this code. However, until I decide on a policy for redistribution and reuse of this code, please do not redistribute or reuse any part of the code itself.</p>
 	</div>
 </body>
 </html>
