@@ -189,7 +189,7 @@
 			for (var x = 0; x < w; x++) {
 				for (var y = 0; y < h; y++) {
 					var i = (x + y * w) * 4;
-					var color = get_color(x, y);
+					var color = get_color_index(x, y);
 					d.data[i] = d.data[i + 1] = d.data[i + 2] = d.data[i + 3] = 0;
 					if (color) {
 						color = Munsell.interpolate(color[0], color[1], color[2]);
@@ -210,47 +210,48 @@
 				document.getElementById('selected'),
 				document.getElementById('selected_box'));
 		}
-		function get_color(x, y) {
-			var m = document.getElementById('main');
-			var radius = m.height / 2;
+		function munsell_to_index(h, l, c) {
 			var i, j, k;
+			// We start i = 0 as 2.5R
+			i = ((h * 0.4) + 39) % 40;
+			if (l < 1) {
+				j = l * 5;
+			} else {
+				j = l + 4;
+			}
+			k = c * 0.5;
+			return [i, j, k];
+		}
+		function get_color_index(x, y) {
+			var radius = document.getElementById('main').height / 2;
+			var ans;
 			if (x < 2 * radius) {
 				x = x/(2 * radius);
 				y = 1 - y/(2 * radius);
-				i = window.current_color[0];
-				if (y < 0.1) {
-					j = y * 50;
-				} else {
-					j = y * 10 + 4;
-				}
-				k = x * 26;
+				ans = munsell_to_index(0, y * 10, x * 52);
+				ans[0] = window.current_color[0];
 			} else if ( x < 4 * radius ) {
 				x = x/radius - 3;
 				y = 1 - y/radius;
-				i = Math.atan2(y, x) * 20 / Math.PI;
-				i = (i + 40) % 40;
-				j = window.current_color[1];
-				k = Math.sqrt(x*x + y*y) * 26;
+				// Add 2.5 because 2.5R is the zero angle
+				ans = munsell_to_index(Math.atan2(y, x) * 50 / Math.PI + 2.5,
+					0, Math.sqrt(x*x + y*y) * 52);
+				ans[1] = window.current_color[1];
 			} else {
 				x = x/radius - 5;
 				y = 1 - y/radius;
-				i = Math.atan2(y, x) * 20 / Math.PI;
-				i = (i + 40) % 40;
-				j = Math.sqrt(x*x + y*y);
-				if (j < 0.1) {
-					j = j * 50;
-				} else {
-					j = j * 10 + 4;
-				}
-				k = window.current_color[2];
+				// Add 2.5 because 2.5R is the zero angle
+				ans = munsell_to_index(Math.atan2(y, x) * 50 / Math.PI + 2.5,
+					Math.sqrt(x*x + y*y) * 10, 0);
+				ans[2] = window.current_color[2];
 			}
-			if (i < 0 || j < 0 || k < -1) {
+			if (ans[0] < 0 || ans[1] < 0 || ans[2] < 0) {
 				return;
 			}
-			if (i >= 40 || j >= 14 || k >= 25) {
+			if (ans[0] >= 40 || ans[1] > 14 || ans[2] >= 26) {
 				return;
 			}
-			return [i, j, k];
+			return ans;
 		}
 		function show_color_in_elt(color, elt, showbox) {
 			if (!color) { return; }
@@ -263,11 +264,20 @@
 				} else {
 					ans += ' <span class="warning">' + rgbname + '</span>';
 				}
+				showbox.style.background = rgbname;
 			} else {
 				ans += ' <span class="error">(Uncharted)</span>';
+				showbox.style.background = 'transparent';
 			}
 			elt.innerHTML = ans;
-			showbox.style.background = rgbname;
+		}
+		function fetch_input_color() {
+			var h1 = document.getElementById('goto_hue1');
+			var h2 = document.getElementById('goto_hue2');
+			var h = parseFloat(h1.value) + parseFloat(h2.value);
+			var l = parseFloat(document.getElementById('goto_lightness').value);
+			var c = parseFloat(document.getElementById('goto_chroma').value);
+			return [h, l, c];
 		}
 		window.options = new Object();
 		window.options.refresh = function () {
@@ -289,7 +299,7 @@
 			m.onmousemove = function (e) {
 				if (!e) { e = window.event; }
 				var xy = mouse_coords(e);
-				var color = get_color(xy[0] - m.offsetLeft, xy[1] - m.offsetTop);
+				var color = get_color_index(xy[0] - m.offsetLeft, xy[1] - m.offsetTop);
 				if (color) {
 					window.options.refresh();
 					if (window.options.discrete) {
@@ -342,6 +352,16 @@
 				}
 				button.disabled = true;
 				setTimeout(draw_continuous_finish, 25);
+			};
+			// Handle the color-input form
+			document.getElementById('goto_form').onsubmit = function () {
+				var hlc = fetch_input_color();
+				var color = munsell_to_index(hlc[0], hlc[1], hlc[2]);
+				if (color) {
+					window.current_color = color;
+					draw();
+				}
+				return false;
 			};
 		};
 		//-->
@@ -413,6 +433,27 @@
 			<span id="mouseover">None</span>
 			<span id="mouseover_box">&nbsp;</span>
 		</li>
+		<li><form id="goto_form" action="#">
+			<input type="submit" id="goto_button" value="Go to" />
+			<input type="number" id="goto_hue2" title="Hue"
+				min="0" max="10" step="0.1" value="7.5" />
+			<select id="goto_hue1" title="Hue">
+				<option value="0">R</option>
+				<option value="10">YR</option>
+				<option value="20">Y</option>
+				<option value="30">GY</option>
+				<option value="40">G</option>
+				<option value="50">BG</option>
+				<option value="60">B</option>
+				<option value="70" selected>PB</option>
+				<option value="80">P</option>
+				<option value="90">RP</option>
+			</select>
+			<input type="number" id="goto_lightness" title="Lightness"
+				min="0" max="10" step="0.1" value="4.0" />/<input
+				type="number" id="goto_chroma" title="Chroma"
+				min="0" max="50" step="0.5" value="8.0" />
+		</form></li>
 	</div>
 </body>
 </html>
