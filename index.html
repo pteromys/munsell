@@ -43,6 +43,29 @@
 			var chroma = (k * 2).toFixed(1);
 			return hue + ' ' + lightness + '/' + chroma;
 		}
+		function hex_from_name(name) {
+			var r = /([0-9.]+)[\s]*([A-Z]{1,2})[\s]*([0-9.]+)\/[\s]*([0-9.]+)/;
+			var hues = ['R', 'YR', 'Y', 'GY', 'G', 'BG', 'B', 'PB', 'P', 'RP']
+			var result = r.exec(name);
+			var hue = parseFloat(result[1]);
+			if (hues.indexOf(result[2]) != -1) {
+				hue += 10 * hues.indexOf(result[2]);
+			}
+			var value = parseFloat(result[3]);
+			var chroma = parseFloat(result[4]);
+			var index = munsell_to_index(hue, value, chroma);
+			var rgb = Munsell.interpolate(index[0], index[1], index[2]);
+			var ans = '';
+			for (var i in rgb) {
+				rgb[i] = Math.max(0, Math.min(Math.round(rgb[i] * 255), 255));
+				rgb[i] = rgb[i].toString(16);
+				while (rgb[i].length < 2) {
+					rgb[i] = '0' + rgb[i];
+				}
+				ans += rgb[i];
+			}
+			return ans;
+		}
 		function drawWedge(ctx, r1, r2, angle1, angle2) {
 			ctx.beginPath();
 			ctx.moveTo(r1 * Math.cos(angle2), r1 * Math.sin(angle2));
