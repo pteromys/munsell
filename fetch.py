@@ -9,8 +9,11 @@ data_file = 'all.dat'
 def fetch(url = data_url, fname = data_file, clobber = False):
     # If we're not clobbering the file, quit early if we can read it.
     if not clobber:
-        with open(fname) as f:
-            return
+        try:
+            with open(fname) as f:
+                return
+        except FileNotFoundError:
+            pass
     # Fetch the data from the internet.
     data = urllib.request.urlopen(url)
     with open(fname, 'w') as f:
