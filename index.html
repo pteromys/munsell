@@ -35,12 +35,12 @@
 			else { return (j - 4) / 10; }
 		}
 		function munsell_name(i, j, k) {
-			var hue = ((i % 4 + 1) * 2.5).toFixed(1) +
+			var hue = ((i % 4 + 1) * 2.5).toFixed(3) +
 				['R', 'YR', 'Y', 'GY', 'G', 'BG', 'B', 'PB', 'P', 'RP'][
 				Math.floor(i/4)
 				];
-			var lightness = (lightness_map(j) * 10).toFixed(2);
-			var chroma = (k * 2).toFixed(1);
+			var lightness = (lightness_map(j) * 10).toFixed(3);
+			var chroma = (k * 2).toFixed(3);
 			return hue + ' ' + lightness + '/' + chroma;
 		}
 		function hex_from_name(name) {
@@ -268,7 +268,7 @@
 					Math.sqrt(x*x + y*y) * 10, 0);
 				ans[2] = window.current_color[2];
 			}
-			if (ans[0] < 0 || ans[1] < 0 || ans[2] < 0) {
+			if (ans[0] < 0 || ans[1] < -1 || ans[2] < 0) {
 				return;
 			}
 			if (ans[0] >= 40 || ans[1] > 14 || ans[2] >= 26) {
@@ -315,7 +315,7 @@
 			m.height = Math.floor(width / 3);
 			window.options.refresh();
 			// Pick initial color and draw once
-			window.current_color = [30, 8, 4]; // h, l, c
+			window.current_color = [30, 3, 20]; // h, l, c
 			draw();
 			// Having drawn once, set up event handlers
 			// Select color at the mouse position
@@ -503,7 +503,7 @@
 		<li><form id="goto_form" action="#">
 			<input type="submit" id="goto_button" value="Go to" />
 			<input type="number" id="goto_hue2" title="Hue"
-				min="0" max="10" step="0.1" value="7.5" />
+				min="0" max="10" step="0.001" value="7.5" />
 			<select id="goto_hue1" title="Hue">
 				<option value="0">R</option>
 				<option value="10">YR</option>
@@ -517,9 +517,9 @@
 				<option value="90">RP</option>
 			</select>
 			<input type="number" id="goto_lightness" title="Value"
-				min="0" max="10" step="0.1" value="4.0" />/<input
+				min="0" max="10" step="0.001" value="3.0" />/<input
 				type="number" id="goto_chroma" title="Chroma"
-				min="0" max="50" step="0.5" value="8.0" />
+				min="0" max="52" step="0.001" value="20.0" />
 		</form></li>
 	</ul>
 
