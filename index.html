@@ -8,12 +8,15 @@
 	<script type="text/javascript" src="color.js"></script>
 	<script type="text/javascript">
 		<!--
-		function colorname(triple) {
+		function srgb_coords(triple) {
 			var ans = [0, 0, 0];
 			for (var i in ans) {
 				ans[i] = Math.round(triple[i] * 255);
 			}
-			return Color.cssrgb(ans);
+			return ans;
+		}
+		function colorname(triple) {
+			return Color.cssrgb(srgb_coords(triple));
 		}
 		function color_charted(triple) {
 			for (var i in triple) {
@@ -22,8 +25,9 @@
 			return true;
 		}
 		function color_valid(triple) {
-			for (var i in triple) {
-				if (triple[i] < 0 || triple[i] > 1) { return false; }
+			var srgb = srgb_coords(triple);
+			for (var i in srgb) {
+				if (srgb[i] < 0 || srgb[i] > 255) { return false; }
 			}
 			return true;
 		}
