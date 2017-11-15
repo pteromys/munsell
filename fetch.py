@@ -3,7 +3,7 @@
 import math
 import urllib.request
 
-data_url = 'http://www.cis.rit.edu/research/mcsl2/online/munsell_data/all.dat'
+data_url = 'http://www.rit-mcsl.org/MunsellRenotation/all.dat'
 data_file = 'all.dat'
 
 def fetch(url = data_url, fname = data_file, clobber = False):
@@ -46,9 +46,9 @@ def xyy_to_rgb_linear(x, y, y2):
     y2 /= 100
     x2 = y2 * x / y
     z2 = y2 * (1 - x - y) / y
-    return (3.2406 * x2 - 1.5372 * y2 - 0.4986 * z2,
-        -0.9689 * x2 + 1.8758 * y2 + 0.0415 * z2,
-        0.0557 * x2 - 0.2040 * y2 + 1.0570 * z2)
+    return (3.2303 * x2 - 1.5877 * y2 - 0.4909 * z2,
+        -0.9834 * x2 + 1.9125 * y2 + 0.0440 * z2,
+        0.0539 * x2 - 0.2004 * y2 + 0.9706 * z2)
 
 def rgb_delinearize(*rgb):
     ans = [0, 0, 0]
