@@ -72,9 +72,13 @@ def average_triplets(triplets, ignore_nones = False):
         ans[i] = sum(filtered_values) / len(filtered_values)
     return ans
 
+def value_to_y(v):
+    return v * (1.1914 + v * (-0.22533 + v * (0.23352 + v * (-0.020484 + v * 0.00081939))))
+
 def process():
     entries = parse(load())
     for entry in entries:
+        entry[-1] = 0.975 * entry[-1]
         entry[-3:] = rgb_delinearize(*xyy_to_rgb_linear(*entry[-3:]))
     # Fill the table that our javascript will read.
     c = [[[[None,None,None] for k in range(27)] for j in range(16)] for i in range(40)]
@@ -82,18 +86,12 @@ def process():
         c[round(entry[0] * 0.4 - 1)][
             round((entry[1] > 1) and (entry[1] + 4) or (entry[1] * 5))
             ][round(entry[2]/2)] = entry[-3:]
-    # Insert grays (chroma = 0) by averaging diametric opposites.
-    # The source of our data doesn't include grays, so we interpolate.
+    # Insert grays (chroma = 0) by the ASTM Standard
+    value_list = [x * 0.2 for x in range(0, 5)] + list(range(1, 11))
     for j in range(15):
-        gray = average_triplets(
-            [average_triplets([c[i][j][1], c[i+20][j][1]]) for i in range(20)],
-            ignore_nones = True)
+        gray = rgb_delinearize(*xyy_to_rgb_linear(0.31006, 0.31616, value_to_y(value_list[j])))
         for i in range(40):
             c[i][j][0] = gray
-    # Insert black
-    for i in range(40):
-        for k in range(27):
-            c[i][0][k] = [0, 0, 0]
     return c
 
 def prettify(c):
